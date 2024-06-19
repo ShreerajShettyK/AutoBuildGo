@@ -34,7 +34,7 @@ var (
 	mockOS       *MockOS
 )
 
-func init() {
+func setupMocks() {
 	mockGoDotEnv = new(MockGoDotEnv)
 	mockOS = new(MockOS)
 	goDotEnvLoader = mockGoDotEnv
@@ -42,57 +42,85 @@ func init() {
 }
 
 func TestLoadEnv_Success(t *testing.T) {
+	setupMocks()
+
+	// Arrange
 	mockGoDotEnv.On("Load", ".env").Return(nil)
 	mockOS.On("Getenv", "TEMPLATE_URL").Return("some_template_url")
 
+	// Act & Assert
 	assert.NotPanics(t, func() {
 		loadEnv()
 	})
 
+	// Assert
 	mockGoDotEnv.AssertCalled(t, "Load", ".env")
 	mockOS.AssertCalled(t, "Getenv", "TEMPLATE_URL")
 }
 
 func TestLoadEnv_Failure(t *testing.T) {
+	setupMocks()
+
+	// Arrange
 	mockGoDotEnv.On("Load", ".env").Return(nil)
 	mockOS.On("Getenv", "TEMPLATE_URL").Return("")
 
+	// Act & Assert
 	assert.PanicsWithValue(t, "TEMPLATE_URL must be set in the environment", func() {
 		loadEnv()
 	})
 
+	// Assert
 	mockGoDotEnv.AssertCalled(t, "Load", ".env")
 	mockOS.AssertCalled(t, "Getenv", "TEMPLATE_URL")
 }
 
 func TestCheckTemplateURL_Success(t *testing.T) {
+	setupMocks()
+
+	// Arrange
 	mockOS.On("Getenv", "TEMPLATE_URL").Return("some_template_url")
 
+	// Act & Assert
 	assert.NotPanics(t, func() {
 		checkTemplateURL()
 	})
 
+	// Assert
 	mockOS.AssertCalled(t, "Getenv", "TEMPLATE_URL")
 }
 
 func TestCheckTemplateURL_Failure(t *testing.T) {
+	setupMocks()
+
+	// Arrange
 	mockOS.On("Getenv", "TEMPLATE_URL").Return("")
 
+	// Act & Assert
 	assert.PanicsWithValue(t, "TEMPLATE_URL must be set in the environment", func() {
 		checkTemplateURL()
 	})
 
+	// Assert
 	mockOS.AssertCalled(t, "Getenv", "TEMPLATE_URL")
 }
 
 func TestDefaultRepoConfig(t *testing.T) {
+	setupMocks()
+
+	// Arrange
 	mockOS.On("Getenv", "TEMPLATE_URL").Return("some_template_url")
 
+	// Act
 	config := DefaultRepoConfig("repoName", "description")
 
+	// Assert
 	assert.Equal(t, "repoName", config.Name)
 	assert.Equal(t, "description", config.Description)
 	assert.Equal(t, true, config.Private)
 	assert.Equal(t, true, config.AutoInit)
 	assert.Equal(t, "some_template_url", config.TemplateURL)
+
+	// Verify that Getenv was called with the correct parameter
+	mockOS.AssertCalled(t, "Getenv", "TEMPLATE_URL")
 }
