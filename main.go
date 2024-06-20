@@ -47,7 +47,10 @@ func handleCLI() {
 	config := gitsetup.DefaultRepoConfig(repoName, description)
 	gitClient := gitsetup.NewGitClient() // Create an instance of GitClient
 
-	if err := gitClient.CreateGitRepository(config); err != nil {
+	// Fetch user PAT from environment variables
+	userPAT := os.Getenv("GIT_USER_PASSWORD")
+
+	if err := gitClient.CreateGitRepository(config, userPAT); err != nil {
 		log.Fatalf("Failed to create Git repository: %v", err)
 	}
 

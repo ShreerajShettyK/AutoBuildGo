@@ -9,5 +9,7 @@ type RepoConfig struct {
 }
 
 type SecretData struct {
-	GITHUB_TOKEN string `json:"GITHUB_TOKEN"`
+	GITHUB_TOKEN   string `json:"GITHUB_TOKEN"`
+	GITHUB_USER    string `json:"GITHUB_USER"`
+	GITHUB_PASSWORD string `json:"GITHUB_PASSWORD"`
 }

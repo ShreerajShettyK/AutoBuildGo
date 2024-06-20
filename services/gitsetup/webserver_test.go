@@ -77,6 +77,9 @@ func TestMain(m *testing.M) {
 		return mockCloneAndPushRepo(repoName)
 	}
 
+	// Override sleepFunc for tests
+	sleepFunc = func(d time.Duration) {}
+
 	// Run the tests
 	code := m.Run()
 
@@ -89,11 +92,6 @@ func GenerateUniqueRepoName(baseName string) string {
 	return baseName + "-" + uuid.New().String()
 }
 
-// Mock sleep to bypass delays
-var sleepFunc = func(d time.Duration) {
-	time.Sleep(d)
-}
-
 // Test function for CreateRepoHandler
 func TestCreateRepoHandler(t *testing.T) {
 	tests := []struct {
@@ -104,27 +102,6 @@ func TestCreateRepoHandler(t *testing.T) {
 		expectedStatusCode int
 		expectedResponse   string
 	}{
-		// {
-		// 	name:   "Valid request",
-		// 	method: http.MethodPost,
-		// 	body: RepoRequest{
-		// 		RepoName:    GenerateUniqueRepoName("test-repo"), // Use a UUID based unique name
-		// 		Description: "A test repository",
-		// 	},
-		// 	setupMocks: func(ecrClient *MockECRClient, gitClient *MockGitClient, cmdRunner *MockCommandRunner) {
-		// 		ecrClient.On("CreateRepository", mock.Anything, mock.Anything, mock.Anything).Return(&ecr.CreateRepositoryOutput{}, nil).Once()
-		// 		gitClient.On("CreateGitRepository", mock.Anything).Return(nil).Once()
-
-		// 		cmdRunner.On("Run", mock.Anything).Return(nil).Times(3) // Assuming three main steps: clone, commit, push
-		// 		cmdRunner.On("Output", mock.Anything).Return([]byte(""), nil).Times(1) // Assuming one call to get command output
-
-		// 		mockCloneAndPushRepo = func(repoName string) error {
-		// 			return nil
-		// 		}
-		// 	},
-		// 	expectedStatusCode: http.StatusOK,
-		// 	expectedResponse:   "ECR and Git repositories created successfully",
-		// },
 		{
 			name:               "Method not allowed",
 			method:             http.MethodGet,
@@ -164,37 +141,37 @@ func TestCreateRepoHandler(t *testing.T) {
 			expectedStatusCode: http.StatusInternalServerError,
 			expectedResponse:   "Failed to create ECR repository: ecr repo creation failed\n",
 		},
-		// {
-		// 	name:   "Git repo creation failure",
-		// 	method: http.MethodPost,
-		// 	body: RepoRequest{
-		// 		RepoName:    GenerateUniqueRepoName("test-repo"), // Use a UUID based unique name
-		// 		Description: "A test repository",
-		// 	},
-		// 	setupMocks: func(ecrClient *MockECRClient, gitClient *MockGitClient, cmdRunner *MockCommandRunner) {
-		// 		ecrClient.On("CreateRepository", mock.Anything, mock.Anything, mock.Anything).Return(&ecr.CreateRepositoryOutput{}, nil).Once()
-		// 		gitClient.On("CreateGitRepository", mock.Anything).Return(errors.New("git repo creation failed")).Once()
-		// 	},
-		// 	expectedStatusCode: http.StatusInternalServerError,
-		// 	expectedResponse:   "Failed to create Git repository: git repo creation failed\n",
-		// },
-		// {
-		// 	name:   "Clone and push failure",
-		// 	method: http.MethodPost,
-		// 	body: RepoRequest{
-		// 		RepoName:    GenerateUniqueRepoName("test-repo"), // Use a UUID based unique name
-		// 		Description: "A test repository",
-		// 	},
-		// 	setupMocks: func(ecrClient *MockECRClient, gitClient *MockGitClient, cmdRunner *MockCommandRunner) {
-		// 		ecrClient.On("CreateRepository", mock.Anything, mock.Anything, mock.Anything).Return(&ecr.CreateRepositoryOutput{}, nil).Once()
-		// 		gitClient.On("CreateGitRepository", mock.Anything).Return(nil).Once()
-		// 		mockCloneAndPushRepo = func(repoName string) error {
-		// 			return errors.New("clone and push failed")
-		// 		}
-		// 	},
-		// 	expectedStatusCode: http.StatusInternalServerError,
-		// 	expectedResponse:   "Failed to clone and push repository: clone and push failed\n",
-		// },
+		{
+			name:   "Git repo creation failure",
+			method: http.MethodPost,
+			body: RepoRequest{
+				RepoName:    GenerateUniqueRepoName("test-repo"), // Use a UUID based unique name
+				Description: "A test repository",
+			},
+			setupMocks: func(ecrClient *MockECRClient, gitClient *MockGitClient, cmdRunner *MockCommandRunner) {
+				ecrClient.On("CreateRepository", mock.Anything, mock.Anything, mock.Anything).Return(&ecr.CreateRepositoryOutput{}, nil).Once()
+				gitClient.On("CreateGitRepository", mock.Anything).Return(errors.New("git repo creation failed")).Once()
+			},
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedResponse:   "Failed to create Git repository: git repo creation failed\n",
+		},
+		{
+			name:   "Clone and push failure",
+			method: http.MethodPost,
+			body: RepoRequest{
+				RepoName:    GenerateUniqueRepoName("test-repo"), // Use a UUID based unique name
+				Description: "A test repository",
+			},
+			setupMocks: func(ecrClient *MockECRClient, gitClient *MockGitClient, cmdRunner *MockCommandRunner) {
+				ecrClient.On("CreateRepository", mock.Anything, mock.Anything, mock.Anything).Return(&ecr.CreateRepositoryOutput{}, nil).Once()
+				gitClient.On("CreateGitRepository", mock.Anything).Return(nil).Once()
+				mockCloneAndPushRepo = func(repoName string) error {
+					return errors.New("clone and push failed")
+				}
+			},
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedResponse:   "Failed to clone and push repository: clone and push failed\n",
+		},
 	}
 
 	for _, tt := range tests {
@@ -279,8 +256,9 @@ func TestHandleWebServer(t *testing.T) {
 	// Give the server some time to start up
 	time.Sleep(1 * time.Second)
 
-	// Make a request to the server
-	resp, err := http.Post("http://localhost:8082/create-repo", "application/json", bytes.NewBuffer([]byte(`{"RepoName":"integration-test-repo", "Description":"Integration test repo"}`)))
+	// Make a request to the server with a valid JSON body
+	reqBody := `{"repo_name":"integration-test-repo", "description":"Integration test repo"}`
+	resp, err := http.Post("http://localhost:8082/create-repo", "application/json", bytes.NewBuffer([]byte(reqBody)))
 	if err != nil {
 		t.Fatalf("Failed to make request to server: %v", err)
 	}
@@ -295,5 +273,4 @@ func TestHandleWebServer(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Contains(t, string(body), "ECR and Git repositories created successfully")
 
-	// Further validation or cleanup can be added here
 }

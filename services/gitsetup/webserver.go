@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"os"
+
 	"github.com/lep13/AutoBuildGo/services/ecr"
 )
 
@@ -16,6 +18,7 @@ var (
 	NewGitClientFunc     = NewGitClient
 	LoadEnvFunc          = LoadEnv
 	CloneAndPushRepoFunc = CloneAndPushRepo
+	sleepFunc            = time.Sleep // Expose sleep function as a variable
 )
 
 type RepoRequest struct {
@@ -75,13 +78,16 @@ func CreateRepoHandler(w http.ResponseWriter, r *http.Request) {
 	config := DefaultRepoConfig(req.RepoName, description)
 	gitClient := NewGitClientFunc() // Create an instance of GitClient
 
-	if err := gitClient.CreateGitRepository(config); err != nil {
+	// Fetch user PAT from environment variables
+	userPAT := os.Getenv("GIT_USER_PASSWORD")
+
+	if err := gitClient.CreateGitRepository(config, userPAT); err != nil {
 		http.Error(w, "Failed to create Git repository: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// 20 second time delay
-	time.Sleep(20 * time.Second)
+	// Use the wrapper sleep function
+	sleepFunc(20 * time.Second)
 
 	// Use the wrapper function to clone and push the repository
 	if err := CloneAndPushRepoFunc(req.RepoName); err != nil {
