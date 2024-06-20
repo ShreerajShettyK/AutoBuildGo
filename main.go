@@ -53,8 +53,8 @@ func handleCLI() {
 
 	log.Println("ECR and Git repositories created successfully")
 
-	// 20 second time delay
-	time.Sleep(20 * time.Second)
+	// 10 second time delay
+	time.Sleep(10 * time.Second)
 
 	// Clone the repo, update go.mod, and push changes
 	if err := gitsetup.CloneAndPushRepo(repoName); err != nil {
