@@ -3,7 +3,6 @@ package ecr
 import (
 	"context"
 	"log"
-	"errors"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -11,35 +10,24 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ecr/types"
 )
 
-func CreateRepo(repoName string) error {
-	secretName := "gotask1"
+func LoadAWSConfig() (aws.Config, error) {
+	return config.LoadDefaultConfig(context.TODO())
+}
 
-	creds, err := GetAWSCredentials(secretName)
-	if err != nil {
-		log.Printf("Failed to get AWS credentials: %v", err)
-		return err
-	}
+type ECRClientInterface interface {
+	CreateRepository(ctx context.Context, params *ecr.CreateRepositoryInput, optFns ...func(*ecr.Options)) (*ecr.CreateRepositoryOutput, error)
+}
 
-	cfg, err := config.LoadDefaultConfig(context.Background(),
-		config.WithCredentialsProvider(
-			aws.NewCredentialsCache(
-				aws.CredentialsProviderFunc(func(context.Context) (aws.Credentials, error) {
-					return aws.Credentials{
-						AccessKeyID:     creds.AccessKeyID,
-						SecretAccessKey: creds.SecretAccessKey,
-						SessionToken:    creds.SessionToken,
-					}, nil
-				}),
-			),
-		),
-	)
-	if err != nil {
-		log.Printf("Unable to load SDK config: %v", err)
-		return err
-	}
+type Client struct {
+	svc ECRClientInterface
+}
 
-	svc := ecr.NewFromConfig(cfg)
+func NewClient(cfg aws.Config) ECRClientInterface {
+	return ecr.NewFromConfig(cfg)
+}
 
+// CreateRepo creates a repository in Amazon ECR using the provided ECR client.
+func CreateRepo(repoName string, ecrClient ECRClientInterface) error {
 	input := &ecr.CreateRepositoryInput{
 		RepositoryName:     aws.String(repoName),
 		ImageTagMutability: types.ImageTagMutabilityImmutable,
@@ -48,15 +36,12 @@ func CreateRepo(repoName string) error {
 		},
 	}
 
-	_, err = svc.CreateRepository(context.Background(), input)
+	_, err := ecrClient.CreateRepository(context.Background(), input)
 	if err != nil {
-		var repoAlreadyExistsErr *types.RepositoryAlreadyExistsException
-		if errors.As(err, &repoAlreadyExistsErr) {
-			log.Printf("Repository %s already exists.", repoName)
-			return nil
-		}
 		log.Printf("Failed to create repository: %v", err)
 		return err
 	}
+
+	log.Printf("Repository %s created successfully.", repoName)
 	return nil
 }
