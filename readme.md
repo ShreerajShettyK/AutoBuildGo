@@ -41,7 +41,7 @@ go run main.go
 Once the server is running, you can create a repository by making a POST request to the server's endpoint:
 
 ```bash
-curl -X POST -H "Content-Type: application/json" -d '{"repo_name": "test-repo", "description": "A test repository"}' http://localhost:8080/create-repo
+curl -X POST -H "Content-Type: application/json" -d '{"repo_name": "test-repo", "description": "A test repository"}' http://localhost:8082/create-repo
 ```
 
 Ensure the repository name is in the correct format as specified:

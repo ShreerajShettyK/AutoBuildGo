@@ -280,7 +280,7 @@ func TestHandleWebServer(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// Make a request to the server
-	resp, err := http.Post("http://localhost:8080/create-repo", "application/json", bytes.NewBuffer([]byte(`{"RepoName":"integration-test-repo", "Description":"Integration test repo"}`)))
+	resp, err := http.Post("http://localhost:8082/create-repo", "application/json", bytes.NewBuffer([]byte(`{"RepoName":"integration-test-repo", "Description":"Integration test repo"}`)))
 	if err != nil {
 		t.Fatalf("Failed to make request to server: %v", err)
 	}
