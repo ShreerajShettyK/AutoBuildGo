@@ -9,6 +9,15 @@ import (
 	"github.com/lep13/AutoBuildGo/services/ecr"
 )
 
+// Wrapper variables for external dependencies
+var (
+	CreateECRClientFunc  = ecr.CreateECRClient
+	CreateRepoFunc       = ecr.CreateRepo
+	NewGitClientFunc     = NewGitClient
+	LoadEnvFunc          = LoadEnv
+	CloneAndPushRepoFunc = CloneAndPushRepo
+)
+
 type RepoRequest struct {
 	RepoName    string `json:"repo_name"`
 	Description string `json:"description"`
@@ -46,25 +55,25 @@ func CreateRepoHandler(w http.ResponseWriter, r *http.Request) {
 		description = "Created from a template via automated setup"
 	}
 
-	// Create ECR client
-	ecrClient, err := ecr.CreateECRClient()
+	// Use the wrapper function to create ECR client
+	ecrClient, err := CreateECRClientFunc()
 	if err != nil {
 		http.Error(w, "Failed to create ECR client: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Create ECR Repository
-	if err := ecr.CreateRepo(req.RepoName, ecrClient); err != nil {
+	// Use the wrapper function to create ECR Repository
+	if err := CreateRepoFunc(req.RepoName, ecrClient); err != nil {
 		http.Error(w, "Failed to create ECR repository: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Ensure environment is loaded
-	LoadEnv()
+	// Use the wrapper function to load environment variables
+	LoadEnvFunc()
 
-	// Create Git Repository
+	// Use the wrapper function to create Git Repository
 	config := DefaultRepoConfig(req.RepoName, description)
-	gitClient := NewGitClient() // Create an instance of GitClient
+	gitClient := NewGitClientFunc() // Create an instance of GitClient
 
 	if err := gitClient.CreateGitRepository(config); err != nil {
 		http.Error(w, "Failed to create Git repository: "+err.Error(), http.StatusInternalServerError)
@@ -74,8 +83,8 @@ func CreateRepoHandler(w http.ResponseWriter, r *http.Request) {
 	// 20 second time delay
 	time.Sleep(20 * time.Second)
 
-	// Clone the repo, update go.mod, and push changes
-	if err := CloneAndPushRepo(req.RepoName); err != nil {
+	// Use the wrapper function to clone and push the repository
+	if err := CloneAndPushRepoFunc(req.RepoName); err != nil {
 		http.Error(w, "Failed to clone and push repository: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
