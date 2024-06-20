@@ -25,11 +25,18 @@ WORKDIR /root/
 
 # Copy the pre-built binary file from the builder stage
 COPY --from=builder /app/main .
-# Copy git into the final image
+
+# Copy git and other necessary tools into the final image
 RUN apk add --no-cache git curl
+
+# Copy the entrypoint script into the container
+COPY entrypoint.sh /entrypoint.sh
+
+# Make the entrypoint script executable
+RUN chmod +x /entrypoint.sh
 
 # Expose port 8082 to the outside world
 EXPOSE 8082
 
-# Command to run the executable
-CMD ["./main"]
+# Set the entrypoint to the script
+ENTRYPOINT ["/entrypoint.sh"]
