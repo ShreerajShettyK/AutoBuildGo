@@ -40,11 +40,11 @@ func handleCLI() {
 		log.Fatalf("Failed to create ECR repository: %v", err)
 	}
 
-	// Ensure environment is loaded
-	gitsetup.LoadEnv()
-
 	// Create Git Repository
-	config := gitsetup.DefaultRepoConfig(repoName, description)
+	config, err := gitsetup.DefaultRepoConfig(repoName, description)
+	if err != nil {
+		log.Fatalf("Failed to create default repository configuration: %v", err)
+	}
 	gitClient := gitsetup.NewGitClient() // Create an instance of GitClient
 
 	if err := gitClient.CreateGitRepository(config); err != nil {

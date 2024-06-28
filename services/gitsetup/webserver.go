@@ -14,7 +14,6 @@ var (
 	CreateECRClientFunc  = ecr.CreateECRClient
 	CreateRepoFunc       = ecr.CreateRepo
 	NewGitClientFunc     = NewGitClient
-	LoadEnvFunc          = LoadEnv
 	CloneAndPushRepoFunc = CloneAndPushRepo
 )
 
@@ -68,11 +67,13 @@ func CreateRepoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use the wrapper function to load environment variables
-	LoadEnvFunc()
-
 	// Use the wrapper function to create Git Repository
-	config := DefaultRepoConfig(req.RepoName, description)
+	config, err := DefaultRepoConfig(req.RepoName, description)
+	if err != nil {
+		http.Error(w, "Failed to create default repository configuration: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	gitClient := NewGitClientFunc() // Create an instance of GitClient
 
 	if err := gitClient.CreateGitRepository(config); err != nil {
