@@ -6,7 +6,6 @@ WORKDIR /app
 
 # Copy the source code into the container
 COPY . .
-COPY .env /app/.env
 
 # Install git
 RUN apk add --no-cache git
