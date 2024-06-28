@@ -61,13 +61,11 @@ var secretCache = struct {
 	data map[string]string
 }{data: make(map[string]string)}
 
-func FetchSecretToken() (string, error) {
-	const secretName = "github_token"
-
+func FetchSecretValue(key string) (string, error) {
 	secretCache.Lock()
-	if token, found := secretCache.data[secretName]; found {
+	if value, found := secretCache.data[key]; found {
 		secretCache.Unlock()
-		return token, nil
+		return value, nil
 	}
 	secretCache.Unlock()
 
@@ -78,7 +76,7 @@ func FetchSecretToken() (string, error) {
 
 	client := secretsManagerClient
 	input := &secretsmanager.GetSecretValueInput{
-		SecretId: aws.String(secretName),
+		SecretId: aws.String("github_token"),
 	}
 
 	result, err := client.GetSecretValue(context.Background(), input)
@@ -86,15 +84,30 @@ func FetchSecretToken() (string, error) {
 		return "", fmt.Errorf("error fetching secret value: %v", err)
 	}
 
-	var secretData SecretData
+	var secretData map[string]string
 	err = json.Unmarshal([]byte(*result.SecretString), &secretData)
 	if err != nil {
 		return "", fmt.Errorf("error unmarshalling secret value: %v", err)
 	}
 
 	secretCache.Lock()
-	secretCache.data[secretName] = secretData.GITHUB_TOKEN
+	for k, v := range secretData {
+		secretCache.data[k] = v
+	}
 	secretCache.Unlock()
 
-	return secretData.GITHUB_TOKEN, nil
+	value, found := secretData[key]
+	if !found {
+		return "", fmt.Errorf("secret key %s not found", key)
+	}
+
+	return value, nil
+}
+
+func FetchSecretToken() (string, error) {
+	return FetchSecretValue("GITHUB_TOKEN")
+}
+
+func FetchTemplateURL() (string, error) {
+	return FetchSecretValue("TEMPLATE_URL")
 }

@@ -1,5 +1,9 @@
 package gitsetup
 
+import (
+	"fmt"
+)
+
 type RepoConfig struct {
 	Name        string
 	Description string
@@ -8,6 +12,17 @@ type RepoConfig struct {
 	TemplateURL string
 }
 
-type SecretData struct {
-	GITHUB_TOKEN string `json:"GITHUB_TOKEN"`
+func DefaultRepoConfig(repoName string, description string) (RepoConfig, error) {
+	templateURL, err := FetchTemplateURL()
+	if err != nil {
+		return RepoConfig{}, fmt.Errorf("failed to fetch template URL: %v", err)
+	}
+
+	return RepoConfig{
+		Name:        repoName,
+		Description: description,
+		Private:     true,
+		AutoInit:    true,
+		TemplateURL: templateURL,
+	}, nil
 }
