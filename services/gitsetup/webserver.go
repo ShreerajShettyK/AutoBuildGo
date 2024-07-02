@@ -15,6 +15,7 @@ var (
 	CreateRepoFunc       = ecr.CreateRepo
 	NewGitClientFunc     = NewGitClient
 	CloneAndPushRepoFunc = CloneAndPushRepo
+	SleepFunc            = time.Sleep // Make sleep function configurable
 )
 
 type RepoRequest struct {
@@ -82,7 +83,7 @@ func CreateRepoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 20 second time delay
-	time.Sleep(20 * time.Second)
+	SleepFunc(20 * time.Second)
 
 	// Use the wrapper function to clone and push the repository
 	if err := CloneAndPushRepoFunc(req.RepoName); err != nil {

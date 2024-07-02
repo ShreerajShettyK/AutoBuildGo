@@ -54,7 +54,7 @@ func (r *DefaultCommandRunner) Output(cmd *exec.Cmd) ([]byte, error) {
 	return cmd.Output()
 }
 
-var runner CommandRunner = &DefaultCommandRunner{}
+// var runner CommandRunner = &DefaultCommandRunner{}
 
 var secretCache = struct {
 	sync.Mutex

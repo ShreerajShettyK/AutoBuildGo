@@ -9,23 +9,54 @@ import (
 	"strings"
 )
 
+// GitHubService interface
+type GitHubService interface {
+	FetchSecretToken() (string, error)
+	FetchGitHubUsername(token string) (string, error)
+}
+
+// DefaultGitHubService struct
+type DefaultGitHubService struct{}
+
+func (d DefaultGitHubService) FetchSecretToken() (string, error) {
+	return FetchSecretToken() // Using the function defined in fetchsecrets.go
+}
+
+func (d DefaultGitHubService) FetchGitHubUsername(token string) (string, error) {
+	return FetchGitHubUsername(token)
+}
+
+// Global variables to allow mocking in tests
+var (
+	gitHubService GitHubService = DefaultGitHubService{}
+	execCommand                 = exec.Command
+	readFile                    = os.ReadFile
+	writeFile                   = os.WriteFile
+	chdir                       = os.Chdir
+	mkdirTemp                   = os.MkdirTemp
+	removeAll                   = os.RemoveAll
+)
+
+// Define a variable to hold the HTTP client, which can be overridden in tests.
+var httpClient = &http.Client{}
+
 // CloneAndPushRepo clones the repository, updates the go.mod file, and pushes the changes back to GitHub.
 func CloneAndPushRepo(repoName string) error {
 	// Fetch GitHub token
-	token, err := FetchSecretToken()
+	token, err := gitHubService.FetchSecretToken()
 	if err != nil {
 		return fmt.Errorf("error fetching GitHub token: %v", err)
 	}
 
 	// Fetch GitHub username
-	username, err := FetchGitHubUsername(token)
+	username, err := gitHubService.FetchGitHubUsername(token)
 	if err != nil {
 		return fmt.Errorf("error fetching GitHub username: %v", err)
 	}
 
 	// Clone the repository
 	repoURL := fmt.Sprintf("https://%s@github.com/%s/%s.git", token, username, repoName)
-	cmd := exec.Command("git", "clone", repoURL)
+	cmd := execCommand("git", "clone", repoURL)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -33,13 +64,13 @@ func CloneAndPushRepo(repoName string) error {
 	}
 
 	// Change directory to the cloned repository
-	if err := os.Chdir(repoName); err != nil {
+	if err := chdir(repoName); err != nil {
 		return fmt.Errorf("error changing directory to cloned repository: %v", err)
 	}
 
 	// Update go.mod file
 	goModFile := "go.mod"
-	input, err := os.ReadFile(goModFile)
+	input, err := readFile(goModFile)
 	if err != nil {
 		return fmt.Errorf("error reading go.mod file: %v", err)
 	}
@@ -52,26 +83,26 @@ func CloneAndPushRepo(repoName string) error {
 		}
 	}
 	output := strings.Join(lines, "\n")
-	if err := os.WriteFile(goModFile, []byte(output), 0644); err != nil {
+	if err := writeFile(goModFile, []byte(output), 0644); err != nil {
 		return fmt.Errorf("error writing to go.mod file: %v", err)
 	}
 
 	// Commit and push changes
-	cmd = exec.Command("git", "add", goModFile)
+	cmd = execCommand("git", "add", goModFile)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("error adding go.mod file to git: %v", err)
 	}
 
-	cmd = exec.Command("git", "commit", "-m", "Update go.mod module path")
+	cmd = execCommand("git", "commit", "-m", "Update go.mod module path")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("error committing changes: %v", err)
 	}
 
-	cmd = exec.Command("git", "push")
+	cmd = execCommand("git", "push")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -79,12 +110,12 @@ func CloneAndPushRepo(repoName string) error {
 	}
 
 	// Go back to the previous directory
-	if err := os.Chdir(".."); err != nil {
+	if err := chdir(".."); err != nil {
 		return fmt.Errorf("error changing back to the parent directory: %v", err)
 	}
 
 	// Remove the cloned repository
-	if err := os.RemoveAll(repoName); err != nil {
+	if err := removeAll(repoName); err != nil {
 		return fmt.Errorf("error removing the cloned repository: %v", err)
 	}
 
@@ -92,15 +123,19 @@ func CloneAndPushRepo(repoName string) error {
 }
 
 // FetchGitHubUsername fetches the GitHub username of the authenticated user.
-func FetchGitHubUsername(token string) (string, error) {
-	req, err := http.NewRequest("GET", "https://api.github.com/user", nil)
+func FetchGitHubUsername(token string, url ...string) (string, error) {
+	requestURL := "https://api.github.com/user"
+	if len(url) > 0 {
+		requestURL = url[0]
+	}
+
+	req, err := http.NewRequest("GET", requestURL, nil)
 	if err != nil {
 		return "", err
 	}
 	req.Header.Set("Authorization", "token "+token)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return "", err
 	}
