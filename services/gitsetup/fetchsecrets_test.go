@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -35,6 +36,16 @@ func (m *mockSecretsManagerClient) GetSecretValue(ctx context.Context, params *s
 	return &secretsmanager.GetSecretValueOutput{
 		SecretString: aws.String(m.secretString),
 	}, nil
+}
+
+// MockLogger is a mock implementation of the io.Writer interface to capture log.Fatalf calls
+type MockLogger struct {
+	FatalMsg string
+}
+
+func (m *MockLogger) Write(p []byte) (n int, err error) {
+	m.FatalMsg = string(p)
+	return len(p), nil
 }
 
 func TestFetchSecretValue(t *testing.T) {
@@ -171,3 +182,55 @@ func TestFetchSecretValue_ConfigLoaderError(t *testing.T) {
 		t.Errorf("expected empty value, got %s", value)
 	}
 }
+
+func TestDefaultCommandRunner_Run(t *testing.T) {
+	runner := &DefaultCommandRunner{}
+	cmd := exec.Command("cmd", "/c", "echo", "test")
+	err := runner.Run(cmd)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+}
+
+func TestDefaultCommandRunner_Output(t *testing.T) {
+	runner := &DefaultCommandRunner{}
+	cmd := exec.Command("cmd", "/c", "echo", "test")
+	output, err := runner.Output(cmd)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	expectedOutput := "test\r\n"
+	if string(output) != expectedOutput {
+		t.Errorf("expected output: %s, got: %s", expectedOutput, string(output))
+	}
+}
+
+// func TestInit_LogFatalf(t *testing.T) {
+// 	originalLogger := log.Default()
+// 	mockLogger := &MockLogger{}
+// 	log.SetOutput(mockLogger)
+// 	defer log.SetOutput(os.Stderr)
+
+// 	// Simulate configuration loading error
+// 	originalConfigLoader := configLoader
+// 	configLoader = &mockConfigLoader{
+// 		err: errors.New("mock error loading config"),
+// 	}
+// 	defer func() { configLoader = originalConfigLoader }()
+
+// 	func() {
+// 		defer func() {
+// 			if r := recover(); r != nil {
+// 				// Catch the log.Fatalf panic
+// 				if mockLogger.FatalMsg == "" {
+// 					t.Errorf("expected log.Fatalf to be called")
+// 				}
+// 			}
+// 		}()
+// 		init() // Call the init function directly
+// 	}()
+
+// 	if mockLogger.FatalMsg == "" {
+// 		t.Errorf("expected log.Fatalf to be called")
+// 	}
+// }

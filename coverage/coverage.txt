@@ -12,8 +12,8 @@ github.com/lep13/AutoBuildGo/services/ecr/get_config.go:11.41,13.16 2 1
 github.com/lep13/AutoBuildGo/services/ecr/get_config.go:13.16,15.3 1 1
 github.com/lep13/AutoBuildGo/services/ecr/get_config.go:16.2,16.17 1 1
 github.com/lep13/AutoBuildGo/services/ecr/get_config.go:29.135,31.2 1 1
-github.com/lep13/AutoBuildGo/services/gitsetup/clone_push.go:21.66,23.2 1 0
-github.com/lep13/AutoBuildGo/services/gitsetup/clone_push.go:25.81,27.2 1 0
+github.com/lep13/AutoBuildGo/services/gitsetup/clone_push.go:21.66,23.2 1 1
+github.com/lep13/AutoBuildGo/services/gitsetup/clone_push.go:25.81,27.2 1 1
 github.com/lep13/AutoBuildGo/services/gitsetup/clone_push.go:44.46,47.16 2 1
 github.com/lep13/AutoBuildGo/services/gitsetup/clone_push.go:47.16,49.3 1 1
 github.com/lep13/AutoBuildGo/services/gitsetup/clone_push.go:52.2,53.16 2 1
@@ -55,8 +55,8 @@ github.com/lep13/AutoBuildGo/services/gitsetup/fetchsecrets.go:24.134,26.2 1 1
 github.com/lep13/AutoBuildGo/services/gitsetup/fetchsecrets.go:34.13,36.16 2 1
 github.com/lep13/AutoBuildGo/services/gitsetup/fetchsecrets.go:36.16,38.3 1 0
 github.com/lep13/AutoBuildGo/services/gitsetup/fetchsecrets.go:39.2,39.58 1 1
-github.com/lep13/AutoBuildGo/services/gitsetup/fetchsecrets.go:49.57,51.2 1 0
-github.com/lep13/AutoBuildGo/services/gitsetup/fetchsecrets.go:53.70,55.2 1 0
+github.com/lep13/AutoBuildGo/services/gitsetup/fetchsecrets.go:49.57,51.2 1 1
+github.com/lep13/AutoBuildGo/services/gitsetup/fetchsecrets.go:53.70,55.2 1 1
 github.com/lep13/AutoBuildGo/services/gitsetup/fetchsecrets.go:64.51,66.50 2 1
 github.com/lep13/AutoBuildGo/services/gitsetup/fetchsecrets.go:66.50,69.3 2 1
 github.com/lep13/AutoBuildGo/services/gitsetup/fetchsecrets.go:70.2,73.16 3 1
@@ -85,7 +85,7 @@ github.com/lep13/AutoBuildGo/services/gitsetup/gitsetup.go:60.16,62.3 1 1
 github.com/lep13/AutoBuildGo/services/gitsetup/gitsetup.go:63.2,65.43 2 1
 github.com/lep13/AutoBuildGo/services/gitsetup/gitsetup.go:65.43,67.3 1 1
 github.com/lep13/AutoBuildGo/services/gitsetup/gitsetup.go:69.2,70.16 2 1
-github.com/lep13/AutoBuildGo/services/gitsetup/gitsetup.go:70.16,72.3 1 0
+github.com/lep13/AutoBuildGo/services/gitsetup/gitsetup.go:70.16,72.3 1 1
 github.com/lep13/AutoBuildGo/services/gitsetup/gitsetup.go:74.2,74.112 1 1
 github.com/lep13/AutoBuildGo/services/gitsetup/models.go:15.81,17.16 2 1
 github.com/lep13/AutoBuildGo/services/gitsetup/models.go:17.16,19.3 1 0
