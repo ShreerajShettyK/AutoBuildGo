@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -14,6 +16,11 @@ import (
 	awsECR "github.com/aws/aws-sdk-go-v2/service/ecr"
 	localECR "github.com/lep13/AutoBuildGo/services/ecr"
 )
+
+// Helper function to reset HTTP handlers
+func resetHTTPHandlers() {
+	http.DefaultServeMux = new(http.ServeMux)
+}
 
 // Mock implementation of ECRClientInterface
 func mockCreateECRClient() (*awsECR.Client, error) {
@@ -75,6 +82,11 @@ func mockDefaultRepoConfig(repoName, description string) (RepoConfig, error) {
 func mockDefaultRepoConfigError(repoName, description string) (RepoConfig, error) {
 	return RepoConfig{}, errors.New("mock error creating default repo config")
 }
+
+var (
+	originalListenAndServe = httpListenAndServe
+	originalLogFatalf      = logFatalf
+)
 
 func TestCreateRepoHandler(t *testing.T) {
 	// Mock the SleepFunc for the tests
@@ -263,89 +275,112 @@ func TestCreateRepoHandler_DefaultDescription(t *testing.T) {
 	}
 }
 
-// func TestCreateRepoHandler_ErrorCreatingDefaultRepoConfig(t *testing.T) {
-// 	// Mock the DefaultRepoConfig function to simulate an error
-// 	originalDefaultRepoConfig := DefaultRepoConfig
-// 	DefaultRepoConfig = mockDefaultRepoConfigError
-// 	defer func() { DefaultRepoConfig = originalDefaultRepoConfig }()
+func TestCreateRepoHandler_ErrorCreatingGitRepository(t *testing.T) {
+	// Mock the NewGitClient function to simulate an error in creating Git repository
+	originalNewGitClientFunc := NewGitClientFunc
+	defer func() { NewGitClientFunc = originalNewGitClientFunc }()
+	NewGitClientFunc = mockNewGitClientError
 
-// 	reqBody := RepoRequest{
-// 		RepoName:    "test-repo",
-// 		Description: "test description",
-// 	}
-// 	body, _ := json.Marshal(reqBody)
-// 	req := httptest.NewRequest(http.MethodPost, "/create-repo", bytes.NewBuffer(body))
-// 	w := httptest.NewRecorder()
+	reqBody := RepoRequest{
+		RepoName:    "test-repo",
+		Description: "test description",
+	}
+	body, _ := json.Marshal(reqBody)
+	req := httptest.NewRequest(http.MethodPost, "/create-repo", bytes.NewBuffer(body))
+	w := httptest.NewRecorder()
 
-// 	// Mock dependencies
-// 	CreateECRClientFunc = mockCreateECRClient
-// 	CreateRepoFunc = mockCreateRepo
-// 	NewGitClientFunc = mockNewGitClient
-// 	CloneAndPushRepoFunc = mockCloneAndPushRepo
+	// Mock dependencies
+	CreateECRClientFunc = mockCreateECRClient
+	CreateRepoFunc = mockCreateRepo
+	CloneAndPushRepoFunc = mockCloneAndPushRepo
 
-// 	CreateRepoHandler(w, req)
+	CreateRepoHandler(w, req)
 
-// 	resp := w.Result()
-// 	defer resp.Body.Close()
+	resp := w.Result()
+	defer resp.Body.Close()
 
-// 	if resp.StatusCode != http.StatusInternalServerError {
-// 		t.Errorf("expected status %d, got %d", http.StatusInternalServerError, resp.StatusCode)
-// 	}
-// 	if !strings.Contains(string(body), "Failed to create default repository configuration") {
-// 		t.Errorf("expected error message not found, got %s", body)
-// 	}
-// }
+	if resp.StatusCode != http.StatusInternalServerError {
+		t.Errorf("expected status %d, got %d", http.StatusInternalServerError, resp.StatusCode)
+	}
+	body, _ = io.ReadAll(resp.Body)
+	if !strings.Contains(string(body), "Failed to create Git repository") {
+		t.Errorf("expected error message not found, got %s", body)
+	}
+}
 
-// func TestCreateRepoHandler_ErrorCreatingGitRepository(t *testing.T) {
-// 	// Mock the NewGitClient function to simulate an error in creating Git repository
-// 	NewGitClientFunc = mockNewGitClientError
+func TestCreateRepoHandler_ErrorCreatingDefaultRepoConfig(t *testing.T) {
+	// Mock the DefaultRepoConfig function to simulate an error
+	originalDefaultRepoConfigFunc := DefaultRepoConfigFunc
+	defer func() { DefaultRepoConfigFunc = originalDefaultRepoConfigFunc }()
+	DefaultRepoConfigFunc = mockDefaultRepoConfigError
 
-// 	reqBody := RepoRequest{
-// 		RepoName:    "test-repo",
-// 		Description: "test description",
-// 	}
-// 	body, _ := json.Marshal(reqBody)
-// 	req := httptest.NewRequest(http.MethodPost, "/create-repo", bytes.NewBuffer(body))
-// 	w := httptest.NewRecorder()
+	reqBody := RepoRequest{
+		RepoName:    "test-repo",
+		Description: "test description",
+	}
+	body, _ := json.Marshal(reqBody)
+	req := httptest.NewRequest(http.MethodPost, "/create-repo", bytes.NewBuffer(body))
+	w := httptest.NewRecorder()
 
-// 	// Mock dependencies
-// 	CreateECRClientFunc = mockCreateECRClient
-// 	CreateRepoFunc = mockCreateRepo
-// 	CloneAndPushRepoFunc = mockCloneAndPushRepo
+	// Mock dependencies
+	CreateECRClientFunc = mockCreateECRClient
+	CreateRepoFunc = mockCreateRepo
+	NewGitClientFunc = mockNewGitClient
+	CloneAndPushRepoFunc = mockCloneAndPushRepo
 
-// 	CreateRepoHandler(w, req)
+	CreateRepoHandler(w, req)
 
-// 	resp := w.Result()
-// 	defer resp.Body.Close()
+	resp := w.Result()
+	defer resp.Body.Close()
 
-// 	if resp.StatusCode != http.StatusInternalServerError {
-// 		t.Errorf("expected status %d, got %d", http.StatusInternalServerError, resp.StatusCode)
-// 	}
-// 	if !strings.Contains(string(body), "Failed to create Git repository") {
-// 		t.Errorf("expected error message not found, got %s", body)
-// 	}
-// }
+	if resp.StatusCode != http.StatusInternalServerError {
+		t.Errorf("expected status %d, got %d", http.StatusInternalServerError, resp.StatusCode)
+	}
+	body, _ = io.ReadAll(resp.Body)
+	if !strings.Contains(string(body), "Failed to create default repository configuration") {
+		t.Errorf("expected error message not found, got %s", body)
+	}
+}
 
-// func TestHandleWebServer_ErrorStartingServer(t *testing.T) {
-// 	// Mock the log.Fatalf function to capture the output
-// 	originalLogFatalf := log.Fatalf
-// 	defer func() { log.Fatalf = originalLogFatalf }()
-// 	var logOutput bytes.Buffer
-// 	log.SetOutput(&logOutput)
-// 	log.Fatalf = func(format string, v ...interface{}) {
-// 		logOutput.WriteString(fmt.Sprintf(format, v...))
-// 	}
+// Mock the http.ListenAndServe function to simulate a server start failure
+func TestHandleWebServer_ErrorStartingServer(t *testing.T) {
+	resetHTTPHandlers() // Reset the HTTP handlers before this test
 
-// 	// Mock the http.ListenAndServe function to simulate an error
-// 	originalListenAndServe := http.ListenAndServe
-// 	defer func() { http.ListenAndServe = originalListenAndServe }()
-// 	http.ListenAndServe = func(addr string, handler http.Handler) error {
-// 		return errors.New("mock error starting server")
-// 	}
+	httpListenAndServe = func(addr string, handler http.Handler) error {
+		return fmt.Errorf("mock error starting server")
+	}
 
-// 	HandleWebServer()
+	// Mock log.Fatalf to avoid exiting the test process
+	var fatalMsg string
+	logFatalf = func(format string, v ...interface{}) {
+		fatalMsg = fmt.Sprintf(format, v...)
+	}
 
-// 	if !strings.Contains(logOutput.String(), "Server failed to start") {
-// 		t.Errorf("expected log output to contain 'Server failed to start', got %s", logOutput.String())
-// 	}
-// }
+	// Restore the original functions after the test
+	defer func() {
+		httpListenAndServe = originalListenAndServe
+		logFatalf = originalLogFatalf
+		resetHTTPHandlers() // Reset the HTTP handlers after this test
+	}()
+
+	// Run the server in a goroutine
+	go func() {
+		HandleWebServer()
+	}()
+
+	// Wait a short time to ensure the server has attempted to start
+	time.Sleep(100 * time.Millisecond)
+
+	// Check the fatal log message
+	expectedFatalMsg := "Server failed to start: mock error starting server"
+	if fatalMsg != expectedFatalMsg {
+		t.Errorf("expected fatal log message %q, got %q", expectedFatalMsg, fatalMsg)
+	}
+}
+
+func TestMain(m *testing.M) {
+	// Reset HTTP handlers before running tests
+	resetHTTPHandlers()
+	code := m.Run()
+	os.Exit(code)
+}

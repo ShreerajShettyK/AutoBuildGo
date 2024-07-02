@@ -11,11 +11,14 @@ import (
 
 // Wrapper variables for external dependencies
 var (
-	CreateECRClientFunc  = ecr.CreateECRClient
-	CreateRepoFunc       = ecr.CreateRepo
-	NewGitClientFunc     = NewGitClient
-	CloneAndPushRepoFunc = CloneAndPushRepo
-	SleepFunc            = time.Sleep // Make sleep function configurable
+	CreateECRClientFunc   = ecr.CreateECRClient
+	CreateRepoFunc        = ecr.CreateRepo
+	NewGitClientFunc      = NewGitClient
+	CloneAndPushRepoFunc  = CloneAndPushRepo
+	DefaultRepoConfigFunc = DefaultRepoConfig
+	SleepFunc             = time.Sleep // Make sleep function configurable
+	httpListenAndServe    = http.ListenAndServe
+	logFatalf             = log.Fatalf
 )
 
 type RepoRequest struct {
@@ -26,9 +29,9 @@ type RepoRequest struct {
 func HandleWebServer() {
 	http.HandleFunc("/create-repo", CreateRepoHandler)
 	log.Println("Server is starting on :8082...")
-	err := http.ListenAndServe(":8082", nil)
+	err := httpListenAndServe(":8082", nil)
 	if err != nil {
-		log.Fatalf("Server failed to start: %v", err)
+		logFatalf("Server failed to start: %v", err)
 	}
 }
 
@@ -69,7 +72,7 @@ func CreateRepoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Use the wrapper function to create Git Repository
-	config, err := DefaultRepoConfig(req.RepoName, description)
+	config, err := DefaultRepoConfigFunc(req.RepoName, description)
 	if err != nil {
 		http.Error(w, "Failed to create default repository configuration: "+err.Error(), http.StatusInternalServerError)
 		return

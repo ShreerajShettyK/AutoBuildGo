@@ -1,0 +1,18 @@
+mode: set
+github.com/lep13/AutoBuildGo/main.go:13.13,14.22 1 0
+github.com/lep13/AutoBuildGo/main.go:14.22,16.3 1 0
+github.com/lep13/AutoBuildGo/main.go:16.8,18.3 1 0
+github.com/lep13/AutoBuildGo/main.go:21.18,22.22 1 0
+github.com/lep13/AutoBuildGo/main.go:22.22,24.3 1 0
+github.com/lep13/AutoBuildGo/main.go:25.2,28.22 3 0
+github.com/lep13/AutoBuildGo/main.go:28.22,30.3 1 0
+github.com/lep13/AutoBuildGo/main.go:33.2,34.16 2 0
+github.com/lep13/AutoBuildGo/main.go:34.16,36.3 1 0
+github.com/lep13/AutoBuildGo/main.go:39.2,39.60 1 0
+github.com/lep13/AutoBuildGo/main.go:39.60,41.3 1 0
+github.com/lep13/AutoBuildGo/main.go:44.2,45.16 2 0
+github.com/lep13/AutoBuildGo/main.go:45.16,47.3 1 0
+github.com/lep13/AutoBuildGo/main.go:48.2,50.62 2 0
+github.com/lep13/AutoBuildGo/main.go:50.62,52.3 1 0
+github.com/lep13/AutoBuildGo/main.go:54.2,60.60 3 0
+github.com/lep13/AutoBuildGo/main.go:60.60,62.3 1 0

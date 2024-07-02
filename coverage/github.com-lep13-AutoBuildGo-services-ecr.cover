@@ -1,0 +1,14 @@
+mode: set
+github.com/lep13/AutoBuildGo/services/ecr/create_client.go:18.45,20.19 2 1
+github.com/lep13/AutoBuildGo/services/ecr/create_client.go:20.19,22.6 1 1
+github.com/lep13/AutoBuildGo/services/ecr/create_client.go:23.5,23.39 1 1
+github.com/lep13/AutoBuildGo/services/ecr/create_client.go:25.45,28.2 1 1
+github.com/lep13/AutoBuildGo/services/ecr/create_ecr.go:13.42,15.2 1 1
+github.com/lep13/AutoBuildGo/services/ecr/create_ecr.go:25.51,27.2 1 1
+github.com/lep13/AutoBuildGo/services/ecr/create_ecr.go:30.70,40.16 3 1
+github.com/lep13/AutoBuildGo/services/ecr/create_ecr.go:40.16,43.3 2 1
+github.com/lep13/AutoBuildGo/services/ecr/create_ecr.go:45.2,46.12 2 1
+github.com/lep13/AutoBuildGo/services/ecr/get_config.go:11.41,13.16 2 1
+github.com/lep13/AutoBuildGo/services/ecr/get_config.go:13.16,15.3 1 1
+github.com/lep13/AutoBuildGo/services/ecr/get_config.go:16.2,16.17 1 1
+github.com/lep13/AutoBuildGo/services/ecr/get_config.go:29.135,31.2 1 1

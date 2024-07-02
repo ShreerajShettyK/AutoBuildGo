@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/stretchr/testify/assert"
 )
@@ -55,4 +56,30 @@ func TestCreateRepo(t *testing.T) {
 		err := CreateRepo("testRepo", mockClient)
 		assert.Error(t, err)
 	})
+}
+
+func TestNewClient(t *testing.T) {
+	cfg := aws.Config{}
+	client := NewClient(cfg)
+	assert.NotNil(t, client)
+}
+
+func TestLoadAWSConfig(t *testing.T) {
+	t.Run("LoadAWSConfig_Success", func(t *testing.T) {
+		_, err := LoadAWSConfig()
+		assert.NoError(t, err)
+	})
+
+	// t.Run("LoadAWSConfig_Failure", func(t *testing.T) {
+	// 	// Simulate failure by replacing the config loader temporarily
+	// 	originalConfigLoader := config.LoadDefaultConfig
+	// 	defer func() { config.LoadDefaultConfig = originalConfigLoader }()
+
+	// 	config.LoadDefaultConfig = func(ctx context.Context, optFns ...func(*config.LoadOptions) error) (aws.Config, error) {
+	// 		return aws.Config{}, errors.New("mock error loading config")
+	// 	}
+
+	// 	_, err := LoadAWSConfig()
+	// 	assert.Error(t, err)
+	// })
 }

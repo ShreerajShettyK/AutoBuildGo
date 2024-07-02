@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -11,9 +12,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 )
 
-type mockConfigLoader struct{}
+type mockConfigLoader struct {
+	err error
+}
 
 func (m *mockConfigLoader) LoadDefaultConfig(ctx context.Context, options ...func(*config.LoadOptions) error) (aws.Config, error) {
+	if m.err != nil {
+		return aws.Config{}, m.err
+	}
 	return aws.Config{}, nil
 }
 
@@ -146,5 +152,22 @@ func TestFetchTemplateURL(t *testing.T) {
 	}
 	if url != "test_template_url" {
 		t.Errorf("expected URL: %s, got: %s", "test_template_url", url)
+	}
+}
+
+func TestFetchSecretValue_ConfigLoaderError(t *testing.T) {
+	originalConfigLoader := configLoader
+	defer func() { configLoader = originalConfigLoader }()
+
+	configLoader = &mockConfigLoader{
+		err: errors.New("mock error loading config"),
+	}
+
+	value, err := FetchSecretValue("GITHUB_TOKEN")
+	if err == nil || !strings.Contains(err.Error(), "error loading AWS config") {
+		t.Errorf("expected error loading AWS config, got %v", err)
+	}
+	if value != "" {
+		t.Errorf("expected empty value, got %s", value)
 	}
 }
